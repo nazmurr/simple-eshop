@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -31,10 +32,18 @@ class CustomerController extends Controller
         return back()->withErrors(['email' => 'Invalid credentials'])->withInput($request->only('email'));
     }
 
+    public function logout()
+    {
+        Auth::guard('customer')->logout();
+        return redirect("/");
+
+    }
+
     public function accountHistory()
     {
         if(Auth::guard('customer')->check()) {
-            return view('pages.myaccount');
+            $orders = Order::where('customer_id', Auth::guard('customer')->user()->id)->orderBy('id', 'desc')->get();
+            return view('pages.myaccount', compact('orders'));
         }
   
         return redirect("/customers/login")->withSuccess('You are not allowed to access');

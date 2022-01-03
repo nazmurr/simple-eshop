@@ -1,5 +1,7 @@
 <?php
+/* pending points - rating, stripe card payment for checkout */
 // https://pusher.com/tutorials/multiple-authentication-guards-laravel/
+// https://stripe.com/docs/payments/accept-a-payment?platform=web&ui=elements
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +28,9 @@ Route::post('/process-checkout', [App\Http\Controllers\CheckoutController::class
 Route::get('/my-account', [CustomerController::class, 'accountHistory'])->name('accountHistory'); 
 Route::get('/customers/login', [CustomerController::class, 'showLoginForm'])->name('showLoginForm');
 Route::post('/customers/login', [CustomerController::class, 'login'])->name('customerLogin'); 
+Route::post('/customers/logout', [CustomerController::class, 'logout'])->name('customerLogout');
+Route::get('/order/{id}', [App\Http\Controllers\OrderController::class, 'getOrder'])->name('getOrder');
+Route::post('/rating', [App\Http\Controllers\RatingController::class, 'addProductRating'])->name('addProductRating'); 
 
 // Route::get('/my-account', function () {
 //     return view('pages.myaccount');

@@ -50,7 +50,26 @@
     $(function() {
         $('#example-css').barrating({
             theme: 'css-stars',
-            initialRating: 5
+            initialRating: '{{ $product->rating }}',
+            onSelect:function(value, text, event) {
+                var fd = new FormData();    
+                fd.append( 'rating', value );
+                fd.append( 'product_id', '{{ $product->id }}' );
+
+                $.ajax({
+                    url: '/rating',
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    type: 'POST',
+                    headers: {            
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')        
+                    },   
+                    success: function(data) {
+                        //console.log(data);
+                    }
+                });
+            }
         });
     });
 </script>

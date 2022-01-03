@@ -16,6 +16,7 @@ class CheckoutController extends Controller
         $sessionItems = \Request::session()->all();
         $cartItems = [];
         $cartTotal = 0;
+        $cartTotalUnformat = 0;
         if (array_key_exists("products", $sessionItems)) {
             foreach ($sessionItems['products'] as $ind => $product) {
                 $productDetail = Product::findOrFail($product['product_id']);
@@ -28,9 +29,20 @@ class CheckoutController extends Controller
                 $cartTotal += $cartItems[$ind]['total'];
                 $cartItems[$ind]['total'] = number_format($cartItems[$ind]['total'], 2);
             }
+            $cartTotalUnformat = $cartTotal;
             $cartTotal = number_format($cartTotal, 2);
         }
-        return view('pages.checkout', compact('cartItems', 'cartTotal'));
+
+        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
+
+        $stripePaymentIntent = $stripe->paymentIntents->create(
+            [
+                'amount' => $cartTotalUnformat * 100,
+                'currency' => 'usd',
+                'automatic_payment_methods' => ['enabled' => true],
+            ]
+        );
+        return view('pages.checkout', compact('cartItems', 'cartTotal', 'stripePaymentIntent'));
     }
 
     public function processCheckout(Request $request) 

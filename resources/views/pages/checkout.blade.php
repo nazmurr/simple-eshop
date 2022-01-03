@@ -5,13 +5,16 @@
     .alignright {
         text-align: right;
     }
+    #error-message {
+        display: none;
+    }
 </style>
 <div class="container mt-5">
     <div class="row align-items-start">
         
         <div class="col-12">
             <h1 class="mb-3">Checkout</h1>
-            <form action="/process-checkout" method="POST">
+            <form action="/process-checkout" method="POST" id="payment-form" data-secret="{{ $stripePaymentIntent->client_secret }}">
                 @csrf
                 <div class="row align-items-start">
                     <div class="col-7">
@@ -117,15 +120,11 @@
                                 Credit Card Details
                             </div>
                             <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <input type="text" class="form-control" id="cardno" placeholder="Card Number">
-                                    </div>
+                                <div id="payment-element">
+                                    <!-- Elements will create form elements here -->
                                 </div>
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <input type="text" class="form-control" id="expirydate" placeholder="Expiry Date">
-                                    </div>
+                                <div id="error-message" class="alert alert-danger" style="margin-top: 20px;">
+                                    <!-- Display error message to your customers here -->
                                 </div>
                             </div>
                         </div>
@@ -185,4 +184,50 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+const stripe = Stripe('{{ env("STRIPE_PUBLISHABLE_KEY") }}');
+const options = {
+    clientSecret: '{{ $stripePaymentIntent->client_secret }}',
+    // Fully customizable with appearance API.
+    appearance: {/*...*/},
+};
+// Set up Stripe.js and Elements to use in checkout form, passing the client secret obtained in step 2
+const elements = stripe.elements(options);
+
+// Create and mount the Payment Element
+const paymentElement = elements.create('payment');
+paymentElement.mount('#payment-element');
+
+const form = document.getElementById('payment-form');
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const {error} = await stripe.confirmPayment({
+    //`Elements` instance that was used to create the Payment Element
+    elements,
+    redirect: 'if_required',
+    confirmParams: {
+      return_url: 'http://127.0.0.1:8000/thank-you',
+    },
+  });
+
+  if (error) {
+    // This point will only be reached if there is an immediate error when
+    // confirming the payment. Show error to your customer (e.g., payment
+    // details incomplete)
+    const messageContainer = document.querySelector('#error-message');
+    messageContainer.textContent = error.message;
+    messageContainer.style.display = "block";
+  } else {
+      form.submit();
+    // Your customer will be redirected to your `return_url`. For some payment
+    // methods like iDEAL, your customer will be redirected to an intermediate
+    // site first to authorize the payment, then redirected to the `return_url`.
+  }
+});
+</script>
+@endpush
 @endsection
